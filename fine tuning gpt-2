@@ -1,0 +1,52 @@
+# fine_tune_gpt2.py
+
+from transformers import GPT2Tokenizer, GPT2LMHeadModel, Trainer, TrainingArguments
+from datasets import load_dataset
+import torch
+
+# Load the GPT-2 tokenizer
+tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
+
+# Load the GPT-2 model
+model = GPT2LMHeadModel.from_pretrained('gpt2')
+
+# Load your custom dataset
+# Replace 'path_to_your_text_file.txt' with the path to your custom dataset
+dataset = load_dataset('text', data_files={'train': 'path_to_your_text_file.txt'})
+
+# Tokenize the dataset
+def tokenize_function(examples):
+    return tokenizer(examples['text'], padding='max_length', truncation=True, max_length=512)
+
+tokenized_datasets = dataset.map(tokenize_function, batched=True, remove_columns=["text"])
+
+# Define training arguments
+training_args = TrainingArguments(
+    output_dir='./results',          # output directory
+    num_train_epochs=3,              # number of training epochs
+    per_device_train_batch_size=2,   # batch size for training
+    per_device_eval_batch_size=2,    # batch size for evaluation
+    warmup_steps=500,                # number of warmup steps for learning rate scheduler
+    weight_decay=0.01,               # strength of weight decay
+    logging_dir='./logs',            # directory for storing logs
+    logging_steps=10,
+)
+
+# Initialize the Trainer
+trainer = Trainer(
+    model=model,
+    args=training_args,
+    train_dataset=tokenized_datasets['train'],
+)
+
+# Start training
+trainer.train()
+
+# Save the model and tokenizer to local directory
+model.save_pretrained('./fine_tuned_gpt2')
+tokenizer.save_pretrained('./fine_tuned_gpt2')
+
+# Save to GitHub repository
+# Make sure you have initialized a local Git repository and added the remote origin
+# Replace 'https://github.com/your_username/PRODIGY_GAI_01.git' with your GitHub repository URL
+!git remote add origin https://github.com/your_username/PRODIGY_GAI_01.git
